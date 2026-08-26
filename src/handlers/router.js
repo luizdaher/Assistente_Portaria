@@ -8,6 +8,7 @@ const consultarMorador = require("../modules/moradores/consultar");
 const consultarVaga = require("../modules/vagas/consultar");
 const consultarNorma = require("../modules/normas do condominio/consultar");
 const consultarProcedimento = require("../modules/manual de procedimentos/consultar");
+const consultarContato = require("../modules/contatos/consultar");
 
 
 async function processarMensagem(sock, msg) {
@@ -84,7 +85,30 @@ async function processarMensagem(sock, msg) {
         }
 
 
-        // MENU
+        // 5 - CONTATOS
+        if (texto === "5") {
+
+            setEstado(usuario, "CONSULTAR_CONTATO");
+
+            await sock.sendMessage(usuario, {
+                text: `📞 Qual contato você deseja consultar?
+
+Exemplos:
+🛗 Elevador
+📹 Fabrisat
+💧 Sabesp
+⚡ Enel
+🔥 Comgás
+💧 Bombas
+🏢 Administradora
+👔 Síndico`
+            });
+
+            return;
+        }
+
+
+        // MENU PRINCIPAL
         const menu = `Olá! 👋
 
 Sou o Assistente do Condomínio.
@@ -231,6 +255,46 @@ Tente perguntar de outra forma, por exemplo:
 
         await sock.sendMessage(usuario, {
             text: procedimento.resposta
+        });
+
+        limparEstado(usuario);
+
+        return;
+    }
+
+
+    // =========================
+    // CONSULTAR CONTATO
+    // =========================
+
+    if (estado === "CONSULTAR_CONTATO") {
+
+        const contato = consultarContato(texto);
+
+        if (!contato) {
+
+            await sock.sendMessage(usuario, {
+                text: `❌ Não encontrei um contato relacionado a:
+
+"${texto}"
+
+Tente consultar, por exemplo:
+
+• Elevador
+• Fabrisat
+• Enel
+• Sabesp
+• Comgás
+• Bombas
+• Administradora
+• Síndico`
+            });
+
+            return;
+        }
+
+        await sock.sendMessage(usuario, {
+            text: contato.resposta
         });
 
         limparEstado(usuario);
