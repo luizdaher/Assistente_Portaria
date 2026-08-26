@@ -7,6 +7,8 @@ const {
 const consultarMorador = require("../modules/moradores/consultar");
 const consultarVaga = require("../modules/vagas/consultar");
 const consultarNorma = require("../modules/normas do condominio/consultar");
+const consultarProcedimento = require("../modules/manual de procedimentos/consultar");
+
 
 async function processarMensagem(sock, msg) {
 
@@ -23,9 +25,14 @@ async function processarMensagem(sock, msg) {
     console.log("Estado:", estado);
     console.log("Texto:", texto);
 
+
+    // =========================
     // MENU PRINCIPAL
+    // =========================
+
     if (estado === "MENU") {
 
+        // 1 - CONSULTAR MORADOR
         if (texto === "1") {
 
             setEstado(usuario, "CONSULTAR_MORADOR");
@@ -37,6 +44,8 @@ async function processarMensagem(sock, msg) {
             return;
         }
 
+
+        // 2 - CONSULTAR VAGA
         if (texto === "2") {
 
             setEstado(usuario, "CONSULTAR_VAGA");
@@ -47,17 +56,35 @@ async function processarMensagem(sock, msg) {
 
             return;
         }
+
+
+        // 3 - NORMAS DO CONDOMÍNIO
         if (texto === "3") {
 
-    setEstado(usuario, "CONSULTAR_NORMA");
+            setEstado(usuario, "CONSULTAR_NORMA");
 
-    await sock.sendMessage(usuario, {
-        text: "📚 Qual norma do condomínio você deseja consultar?"
-    });
+            await sock.sendMessage(usuario, {
+                text: "📚 Qual norma do condomínio você deseja consultar?"
+            });
 
-    return;
-}
+            return;
+        }
 
+
+        // 4 - MANUAL DE PROCEDIMENTOS
+        if (texto === "4") {
+
+            setEstado(usuario, "CONSULTAR_PROCEDIMENTO");
+
+            await sock.sendMessage(usuario, {
+                text: "📋 Qual procedimento da Portaria ou Ronda você deseja consultar?"
+            });
+
+            return;
+        }
+
+
+        // MENU
         const menu = `Olá! 👋
 
 Sou o Assistente do Condomínio.
@@ -77,7 +104,11 @@ Como posso ajudar?
         return;
     }
 
+
+    // =========================
     // CONSULTAR MORADOR
+    // =========================
+
     if (estado === "CONSULTAR_MORADOR") {
 
         const morador = consultarMorador(texto);
@@ -106,7 +137,11 @@ Bloco: ${morador.bloco}`
         return;
     }
 
+
+    // =========================
     // CONSULTAR VAGA
+    // =========================
+
     if (estado === "CONSULTAR_VAGA") {
 
         const vaga = consultarVaga(texto);
@@ -135,30 +170,75 @@ Bloco: ${vaga.bloco}`
         return;
     }
 
+
+    // =========================
     // CONSULTAR NORMA
-if (estado === "CONSULTAR_NORMA") {
+    // =========================
 
-    const norma = consultarNorma(texto);
+    if (estado === "CONSULTAR_NORMA") {
 
-    if (!norma) {
+        const norma = consultarNorma(texto);
+
+        if (!norma) {
+
+            await sock.sendMessage(usuario, {
+                text: `❌ Não encontrei uma norma relacionada a:
+
+"${texto}"
+
+Tente perguntar de outra forma.`
+            });
+
+            return;
+        }
 
         await sock.sendMessage(usuario, {
-            text: `❌ Não encontrei uma norma relacionada a: ${texto}
-
-Tente perguntar sobre reformas, silêncio, salão de festas, estacionamento ou mudanças.`
+            text: norma.resposta
         });
+
+        limparEstado(usuario);
 
         return;
     }
 
-    await sock.sendMessage(usuario, {
-        text: norma.resposta
-    });
 
-    limparEstado(usuario);
+    // =========================
+    // CONSULTAR PROCEDIMENTO
+    // =========================
 
-    return;
+    if (estado === "CONSULTAR_PROCEDIMENTO") {
+
+        const procedimento = consultarProcedimento(texto);
+
+        if (!procedimento) {
+
+            await sock.sendMessage(usuario, {
+                text: `❌ Não encontrei um procedimento relacionado a:
+
+"${texto}"
+
+Tente perguntar de outra forma, por exemplo:
+
+• Como liberar um visitante?
+• O que fazer se faltar energia?
+• Como funciona uma mudança?
+• O que significa QAP?
+• Como registrar uma ocorrência?`
+            });
+
+            return;
+        }
+
+        await sock.sendMessage(usuario, {
+            text: procedimento.resposta
+        });
+
+        limparEstado(usuario);
+
+        return;
+    }
+
 }
-}
+
 
 module.exports = processarMensagem;
