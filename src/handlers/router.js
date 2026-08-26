@@ -6,6 +6,7 @@ const {
 
 const consultarMorador = require("../modules/moradores/consultar");
 const consultarVaga = require("../modules/vagas/consultar");
+const consultarNorma = require("../modules/normas do condominio/consultar");
 
 async function processarMensagem(sock, msg) {
 
@@ -46,6 +47,16 @@ async function processarMensagem(sock, msg) {
 
             return;
         }
+        if (texto === "3") {
+
+    setEstado(usuario, "CONSULTAR_NORMA");
+
+    await sock.sendMessage(usuario, {
+        text: "📚 Qual norma do condomínio você deseja consultar?"
+    });
+
+    return;
+}
 
         const menu = `Olá! 👋
 
@@ -123,6 +134,31 @@ Bloco: ${vaga.bloco}`
 
         return;
     }
+
+    // CONSULTAR NORMA
+if (estado === "CONSULTAR_NORMA") {
+
+    const norma = consultarNorma(texto);
+
+    if (!norma) {
+
+        await sock.sendMessage(usuario, {
+            text: `❌ Não encontrei uma norma relacionada a: ${texto}
+
+Tente perguntar sobre reformas, silêncio, salão de festas, estacionamento ou mudanças.`
+        });
+
+        return;
+    }
+
+    await sock.sendMessage(usuario, {
+        text: norma.resposta
+    });
+
+    limparEstado(usuario);
+
+    return;
+}
 }
 
 module.exports = processarMensagem;
