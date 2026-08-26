@@ -5,6 +5,7 @@ const {
 } = require("../state/sessions");
 
 const consultarMorador = require("../modules/moradores/consultar");
+const consultarVaga = require("../modules/vagas/consultar");
 
 async function processarMensagem(sock, msg) {
 
@@ -30,6 +31,17 @@ async function processarMensagem(sock, msg) {
 
             await sock.sendMessage(usuario, {
                 text: "🏢 Digite o nome ou o apartamento do morador."
+            });
+
+            return;
+        }
+
+        if (texto === "2") {
+
+            setEstado(usuario, "CONSULTAR_VAGA");
+
+            await sock.sendMessage(usuario, {
+                text: "🚗 Digite o número do apartamento ou da vaga."
             });
 
             return;
@@ -76,6 +88,35 @@ Digite outro nome ou apartamento.`
 Nome: ${morador.nome}
 Apartamento: ${morador.apartamento}
 Bloco: ${morador.bloco}`
+        });
+
+        limparEstado(usuario);
+
+        return;
+    }
+
+    // CONSULTAR VAGA
+    if (estado === "CONSULTAR_VAGA") {
+
+        const vaga = consultarVaga(texto);
+
+        if (!vaga) {
+
+            await sock.sendMessage(usuario, {
+                text: `❌ Não encontrei nenhuma vaga para: ${texto}
+
+Digite outro apartamento ou número de vaga.`
+            });
+
+            return;
+        }
+
+        await sock.sendMessage(usuario, {
+            text: `🚗 Vaga encontrada!
+
+Apartamento: ${vaga.apartamento}
+Vaga: ${vaga.vaga}
+Bloco: ${vaga.bloco}`
         });
 
         limparEstado(usuario);
