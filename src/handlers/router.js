@@ -4,6 +4,8 @@ const {
     limparEstado
 } = require("../state/sessions");
 
+const consultarMorador = require("../modules/moradores/consultar");
+
 async function processarMensagem(sock, msg) {
 
     const usuario = msg.key.remoteJid;
@@ -17,6 +19,7 @@ async function processarMensagem(sock, msg) {
     const estado = getEstado(usuario);
 
     console.log("Estado:", estado);
+    console.log("Texto:", texto);
 
     // MENU PRINCIPAL
     if (estado === "MENU") {
@@ -54,17 +57,31 @@ Como posso ajudar?
     // CONSULTAR MORADOR
     if (estado === "CONSULTAR_MORADOR") {
 
-        await sock.sendMessage(usuario, {
-            text: `🔍 Você pesquisou: ${texto}
+        const morador = consultarMorador(texto);
 
-(A consulta será implementada na próxima etapa.)`
+        if (!morador) {
+
+            await sock.sendMessage(usuario, {
+                text: `❌ Não encontrei nenhum morador para: ${texto}
+
+Digite outro nome ou apartamento.`
+            });
+
+            return;
+        }
+
+        await sock.sendMessage(usuario, {
+            text: `👤 Morador encontrado!
+
+Nome: ${morador.nome}
+Apartamento: ${morador.apartamento}
+Bloco: ${morador.bloco}`
         });
 
         limparEstado(usuario);
 
         return;
     }
-
 }
 
 module.exports = processarMensagem;
